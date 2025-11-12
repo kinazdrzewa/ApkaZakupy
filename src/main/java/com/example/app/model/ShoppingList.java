@@ -1,23 +1,32 @@
 package com.example.app.model;
 
 import jakarta.persistence.*;
-import java.util.List;
 
 @Entity
-@Table(name = "shopping_lists")
+@Table(name = "shopping_list", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "name"})
+})
 public class ShoppingList {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Column(nullable = false)
     private String name;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    public ShoppingList() {}
 
-    @OneToMany(mappedBy = "shoppingList", cascade = CascadeType.ALL)
-    private List<ShoppingListItem> items;
+    public ShoppingList(Long userId, String name) {
+        this.userId = userId;
+        this.name = name;
+    }
 
-    // Gettery i settery
+    public Long getId() { return id; }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 }

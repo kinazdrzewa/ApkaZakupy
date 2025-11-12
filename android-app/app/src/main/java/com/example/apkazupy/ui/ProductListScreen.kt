@@ -1,68 +1,576 @@
+// kotlin
 package com.example.apkazupy.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.RemoveCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import com.example.apkazupy.ui.AppPrimary
+import com.example.apkazupy.ui.AppOnPrimary
+import androidx.compose.material.SliderDefaults
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import com.example.apkazupy.data.Product
+import androidx.compose.material.Card
+import androidx.compose.material.Slider
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.text.style.TextAlign
 
 @Composable
-fun ProductListScreen(viewModel: ProductViewModel, authViewModel: com.example.apkazupy.ui.AuthViewModel, onShowUsers: () -> Unit) {
+fun ProductListScreen(
+    viewModel: ProductViewModel,
+    authViewModel: com.example.apkazupy.ui.AuthViewModel,
+    onShowUsers: () -> Unit
+) {
     val products by viewModel.products.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val local by viewModel.localList.collectAsState()
-    val currentUser by authViewModel.currentUser.collectAsState()
+    val currentUserState = authViewModel.currentUser.collectAsState()
+    val currentUser = currentUserState.value
+    val currentUserId = currentUser?.id
 
-    Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Produkty", style = MaterialTheme.typography.h6)
-            Row {
-                currentUser?.let { Text("Zalogowany: ${it.login}", modifier = Modifier.padding(end = 8.dp)) }
-                Button(onClick = { viewModel.loadProducts() }) { Text("Odśwież") }
-                Spacer(modifier = Modifier.width(8.dp))
-                // show users only for admin
-                if (currentUser?.login == "admin") {
-                    Button(onClick = onShowUsers) { Text("Użytkownicy") }
-                    Spacer(modifier = Modifier.width(8.dp))
+    var maxCalories by remember { mutableStateOf(1000f) }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        TopAppBar(
+            title = { Text("Apka Zakupy") },
+            backgroundColor = AppPrimary,
+            contentColor = AppOnPrimary
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Column(modifier = Modifier.padding(12.dp)) {
+            LaunchedEffect(currentUserId) {
+                if (currentUserId != null) {
+                    viewModel.loadNamedListsRemote(currentUserId)
+                    viewModel.loadListDetailsRemote(currentUserId)
+                } else {
+                    viewModel.clearNamedLists()
                 }
-                Button(onClick = { authViewModel.logout() }) { Text("Wyloguj") }
             }
-        }
 
-        Spacer(modifier = Modifier.height(12.dp))
+            if (currentUser?.login == "admin") {
+                Button(
+                    onClick = onShowUsers,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)
+                ) {
+                    Text("Zobacz użytkowników")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
-        if (loading) {
-            Text("Ładowanie...")
-        } else {
-            if (products.isEmpty()) {
-                Text("Brak produktów w bazie")
-            } else {
-                LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(products) { p ->
-                        Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Column {
-                                Text(p.name ?: "<brak nazwy>", style = MaterialTheme.typography.subtitle1)
-                                Text("Kod: ${p.barcode ?: "-"} • Kal: ${p.calories ?: "-"}")
+            Button(
+                onClick = { /* TODO: scan action */ },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)
+            ) {
+                Text("Skanuj produkt spożywczy")
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            var showAddListDialog by remember { mutableStateOf(false) }
+            var addListError by remember { mutableStateOf<String?>(null) }
+            var addListLoading by remember { mutableStateOf(false) }
+
+            if (showAddListDialog) {
+                var listName by remember { mutableStateOf("") }
+                AlertDialog(
+                    onDismissRequest = {
+                        if (!addListLoading) {
+                            showAddListDialog = false
+                            addListError = null
+                        }
+                    },
+                    title = { Text("Dodaj listę zakupów") },
+                    text = {
+                        Column {
+                            OutlinedTextField(
+                                value = listName,
+                                onValueChange = { listName = it },
+                                label = { Text("Nazwa listy") }
+                            )
+                            addListError?.let { Text(it, color = MaterialTheme.colors.error) }
+                            if (addListLoading) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    CircularProgressIndicator(color = AppPrimary)
+                                }
                             }
-                            Button(onClick = { viewModel.addToLocalList(p) }) { Text("Dodaj") }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                if (listName.isNotBlank()) {
+                                    val uid = currentUserId
+                                    if (uid != null) {
+                                        addListLoading = true
+                                        viewModel.addNamedListRemote(uid, listName) { ok, err ->
+                                            addListLoading = false
+                                            if (ok) {
+                                                showAddListDialog = false
+                                                addListError = null
+                                            } else {
+                                                addListError = err ?: "Błąd sieci"
+                                            }
+                                        }
+                                    } else {
+                                        viewModel.addNamedList(listName)
+                                        showAddListDialog = false
+                                    }
+                                }
+                            },
+                            enabled = !addListLoading
+                        ) {
+                            Text("Dodaj", color = AppPrimary)
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = {
+                            if (!addListLoading) {
+                                showAddListDialog = false
+                                addListError = null
+                            }
+                        }) { Text("Anuluj") }
+                    }
+                )
+            }
+
+            Button(
+                onClick = { showAddListDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)
+            ) {
+                Text("Dodaj listę")
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Card(elevation = 4.dp, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("Produkty", style = MaterialTheme.typography.h6)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Filtruj po maksymalnych kaloriach: ${maxCalories.toInt()}")
+                    Slider(
+                        value = maxCalories,
+                        onValueChange = { maxCalories = it },
+                        valueRange = 0f..2000f,
+                        colors = SliderDefaults.colors(thumbColor = AppPrimary, activeTrackColor = AppPrimary)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (loading) {
+                        Text("Ładowanie...")
+                    } else {
+                        val filtered = products.filter { p ->
+                            p.calories == null || (p.calories ?: 0.0) <= maxCalories.toDouble()
+                        }
+                        if (filtered.isEmpty()) {
+                            Text("Brak produktów w bazie")
+                        } else {
+                            LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+                                items(filtered) { p ->
+                                    ProductItemRow(p = p, viewModel = viewModel, currentUserId = currentUserId)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Card(elevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("Moje listy", style = MaterialTheme.typography.h6)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    val details by viewModel.listDetails.collectAsState()
+                    if (details.isEmpty()) {
+                        Text("Brak list. Utwórz nową listę używając przycisku \\`Dodaj listę\\`.")
+                    } else {
+                        Column {
+                            details.forEach { l ->
+                                var showListDialog by remember { mutableStateOf(false) }
+                                var showDeleteConfirm by remember { mutableStateOf(false) }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    TextButton(
+                                        onClick = { showListDialog = true },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                                    ) {
+                                        Text(
+                                            text = l.name ?: "<lista>",
+                                            style = MaterialTheme.typography.subtitle1,
+                                            modifier = Modifier.fillMaxWidth(),
+                                            textAlign = TextAlign.Start
+                                        )
+                                    }
+                                }
+
+                                if (showListDialog) {
+                                    LaunchedEffect(l.id) { viewModel.loadListItemsRemote(l.id) }
+                                    val items by viewModel.listItems.collectAsState()
+                                    var showItemDetails by remember { mutableStateOf<Pair<Boolean, Long?>>(false to null) }
+                                    val loadingMap: SnapshotStateMap<Long, Boolean> = remember { mutableStateMapOf() }
+
+                                    AlertDialog(
+                                        onDismissRequest = { showListDialog = false },
+                                        title = {
+                                            Text("Lista: ${l.name}")
+                                        },
+                                        text = {
+                                            Column {
+                                                if (items.isEmpty()) {
+                                                    Text("Brak produktów na liście")
+                                                } else {
+                                                    LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
+                                                        items(items) { it ->
+                                                            val itemId = it.itemId ?: -1L
+                                                            Row(
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .padding(8.dp),
+                                                                verticalAlignment = Alignment.CenterVertically
+                                                            ) {
+                                                                Column(modifier = Modifier.weight(1f)) {
+                                                                    Text(it.name ?: "<brak nazwy>")
+                                                                    Spacer(modifier = Modifier.height(4.dp))
+                                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                                        IconButton(onClick = {
+                                                                            if (loadingMap[itemId] == true) return@IconButton
+                                                                            loadingMap[itemId] = true
+                                                                            val current = it.quantity ?: 1
+                                                                            val newQ = current - 1
+                                                                            if (newQ <= 0) {
+                                                                                viewModel.deleteItemRemote(l.id, itemId) { ok, _ ->
+                                                                                    loadingMap[itemId] = false
+                                                                                    if (ok) {
+                                                                                        // po udanym usunięciu można odświeżyć
+                                                                                        viewModel.loadListItemsRemote(l.id)
+                                                                                    }
+                                                                                }
+                                                                            } else {
+                                                                                viewModel.updateItemQuantityRemote(l.id, itemId, newQ) { ok, _ ->
+                                                                                    loadingMap[itemId] = false
+                                                                                    if (ok) viewModel.loadListItemsRemote(l.id)
+                                                                                }
+                                                                            }
+                                                                        }) {
+                                                                            Icon(imageVector = Icons.Filled.RemoveCircle, contentDescription = "Minus", tint = AppPrimary)
+                                                                        }
+
+                                                                        Text((it.quantity ?: 1).toString(), modifier = Modifier.padding(horizontal = 8.dp))
+
+                                                                        IconButton(onClick = {
+                                                                            if (loadingMap[itemId] == true) return@IconButton
+                                                                            loadingMap[itemId] = true
+                                                                            val current = it.quantity ?: 1
+                                                                            val newQ = current + 1
+                                                                            viewModel.updateItemQuantityRemote(l.id, itemId, newQ) { ok, _ ->
+                                                                                loadingMap[itemId] = false
+                                                                                if (ok) viewModel.loadListItemsRemote(l.id)
+                                                                            }
+                                                                        }) {
+                                                                            Icon(imageVector = Icons.Filled.Add, contentDescription = "Plus", tint = AppPrimary)
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                Spacer(modifier = Modifier.width(8.dp))
+
+                                                                Column(horizontalAlignment = Alignment.End) {
+                                                                    IconButton(onClick = { showItemDetails = true to itemId }) {
+                                                                        Icon(imageVector = Icons.Filled.Info, contentDescription = "Szczegóły", tint = AppPrimary)
+                                                                    }
+                                                                    IconButton(onClick = {
+                                                                        if (loadingMap[itemId] == true) return@IconButton
+                                                                        loadingMap[itemId] = true
+                                                                        viewModel.deleteItemRemote(l.id, itemId) { ok, _ ->
+                                                                            loadingMap[itemId] = false
+                                                                            if (ok) viewModel.loadListItemsRemote(l.id)
+                                                                        }
+                                                                    }) {
+                                                                        Icon(imageVector = Icons.Filled.Delete, contentDescription = "Usuń", tint = Color.Red)
+                                                                    }
+                                                                }
+
+                                                                if (showItemDetails.first && showItemDetails.second == itemId) {
+                                                                    AlertDialog(
+                                                                        onDismissRequest = { showItemDetails = false to null },
+                                                                        title = { Text(it.name ?: "<brak nazwy>") },
+                                                                        text = {
+                                                                            Column {
+                                                                                Text("Kod: ${it.barcode ?: "-"}")
+                                                                                Text("Kalorie: ${it.calories ?: "-"}")
+                                                                                Text("Białko: ${it.protein ?: "-"}")
+                                                                                Text("Tłuszcz: ${it.fat ?: "-"}")
+                                                                                Text("Węglowodany: ${it.carbohydrates ?: "-"}")
+                                                                                Text("Ilość: ${it.quantity ?: 1}")
+                                                                            }
+                                                                        },
+                                                                        confirmButton = {
+                                                                            TextButton(onClick = { showItemDetails = false to null }) {
+                                                                                Text("Zamknij", color = AppPrimary)
+                                                                            }
+                                                                        }
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    val totalCalories = items.sumOf { (it.calories ?: 0.0) * (it.quantity ?: 1) }
+                                                    val totalProtein = items.sumOf { (it.protein ?: 0.0) * (it.quantity ?: 1) }
+                                                    val totalFat = items.sumOf { (it.fat ?: 0.0) * (it.quantity ?: 1) }
+                                                    val totalCarbs = items.sumOf { (it.carbohydrates ?: 0.0) * (it.quantity ?: 1) }
+
+                                                    Spacer(modifier = Modifier.height(8.dp))
+                                                    Divider()
+                                                    Spacer(modifier = Modifier.height(6.dp))
+                                                    Column {
+                                                        Text("Suma kalorii: ${"%.1f".format(totalCalories)}")
+                                                        Text("Białko: ${"%.1f".format(totalProtein)} g • Tłuszcz: ${"%.1f".format(totalFat)} g")
+                                                        Text("Węglowodany: ${"%.1f".format(totalCarbs)} g")
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        confirmButton = {},
+                                        dismissButton = {
+                                            Row {
+                                                TextButton(onClick = { showListDialog = false }) {
+                                                    Text("Zamknij", color = AppPrimary)
+                                                }
+                                                TextButton(onClick = { showDeleteConfirm = true }) {
+                                                    Text("Usuń", color = Color.Red)
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
+
+                                if (showDeleteConfirm) {
+                                    AlertDialog(
+                                        onDismissRequest = { showDeleteConfirm = false },
+                                        title = { Text("Usuń listę") },
+                                        text = { Text("Czy na pewno chcesz usunąć listę '${l.name}'? To usunie wszystkie przedmioty na tej liście.") },
+                                        confirmButton = {
+                                            TextButton(onClick = {
+                                                viewModel.deleteListRemote(l.id, currentUserId) { ok, _ ->
+                                                    showDeleteConfirm = false
+                                                    if (ok) {
+                                                        showListDialog = false
+                                                    }
+                                                }
+                                            }) { Text("Usuń", color = Color.Red) }
+                                        },
+                                        dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Anuluj") } }
+                                    )
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+    }
+}
 
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
+@Composable
+private fun ProductItemRow(p: Product, viewModel: ProductViewModel, currentUserId: Long?) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(p.name ?: "<brak nazwy>", style = MaterialTheme.typography.subtitle1)
+            Text("Kal: ${p.calories ?: "-"}")
+        }
 
-        Text("Lista lokalna", style = MaterialTheme.typography.h6)
-        if (local.isEmpty()) {
-            Text("Brak pozycji")
-        } else {
-            LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
-                items(local) { p -> Text(p.name ?: "<brak nazwy>") }
+        var showDetails by remember { mutableStateOf(false) }
+        IconButton(onClick = { showDetails = true }) {
+            Icon(imageVector = Icons.Filled.Info, contentDescription = "Szczegóły", tint = AppPrimary)
+        }
+
+        val addButtonSize: Dp = 44.dp
+        var showAddToListDialog by remember { mutableStateOf(false) }
+
+        if (showAddToListDialog) {
+            var selectedListId by remember { mutableStateOf<Long?>(null) }
+            var qtyText by remember { mutableStateOf("1") }
+            var showCreateInline by remember { mutableStateOf(false) }
+            var newListName by remember { mutableStateOf("") }
+            var creating by remember { mutableStateOf(false) }
+            var listSelectionError by remember { mutableStateOf<String?>(null) }
+
+            LaunchedEffect(currentUserId) {
+                if (currentUserId != null) {
+                    viewModel.loadListDetailsRemote(currentUserId)
+                }
             }
+
+            val lists by viewModel.listDetails.collectAsState()
+
+            AlertDialog(
+                onDismissRequest = { showAddToListDialog = false },
+                title = { Text("Dodaj do listy") },
+                text = {
+                    Column {
+                        if (currentUserId == null) {
+                            Text("Jesteś niezalogowany. Produkt zostanie dodany do lokalnej listy.")
+                        }
+                        if (lists.isEmpty()) {
+                            Text("Brak istniejących list.")
+                        } else {
+                            lists.forEach { l ->
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    RadioButton(selected = selectedListId == l.id, onClick = { selectedListId = l.id; listSelectionError = null })
+                                    Text(text = l.name ?: "<lista>")
+                                }
+                            }
+                            // show selection error if present
+                            listSelectionError?.let { Text(it, color = MaterialTheme.colors.error) }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (!showCreateInline) {
+                            TextButton(onClick = { showCreateInline = true }) { Text("Utwórz nową listę...") }
+                        } else {
+                            Column {
+                                OutlinedTextField(
+                                    value = newListName,
+                                    onValueChange = { newListName = it },
+                                    label = { Text("Nazwa nowej listy") }
+                                )
+                                Row {
+                                    TextButton(onClick = {
+                                        if (newListName.isBlank()) return@TextButton
+                                        creating = true
+                                        viewModel.addNamedListRemote(currentUserId, newListName) { ok, _ ->
+                                            creating = false
+                                            if (ok) {
+                                                viewModel.loadListDetailsRemote(currentUserId)
+                                                // można ustawić selectedListId na nowo utworzoną listę po odświeżeniu
+                                            } else {
+                                                // błąd - zamykamy dialog
+                                                showAddToListDialog = false
+                                            }
+                                        }
+                                    }, enabled = !creating) {
+                                        Text("Utwórz i dodaj", color = AppPrimary)
+                                    }
+                                    TextButton(onClick = { showCreateInline = false }) { Text("Anuluj") }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = qtyText,
+                            onValueChange = { qtyText = it.filter { c -> c.isDigit() } },
+                            label = { Text("Ilość") }
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val qty = qtyText.toIntOrNull() ?: 1
+                        // require selection (or inline creation) when logged in
+                        if (currentUserId != null && selectedListId == null && !showCreateInline) {
+                            listSelectionError = "Wybierz listę lub utwórz nową"
+                            return@TextButton
+                        }
+                        if (currentUserId == null) {
+                            repeat(qty) { viewModel.addToLocalList(p) }
+                            showAddToListDialog = false
+                        } else {
+                            if (selectedListId != null) {
+                                viewModel.addProductToListRemote(selectedListId!!, p.id ?: -1L, qty) { ok, _ ->
+                                    if (ok) {
+                                        showAddToListDialog = false
+                                    }
+                                }
+                            } else {
+                                val newListNameAuto = p.name ?: "Lista"
+                                viewModel.addNamedListRemote(currentUserId, newListNameAuto) { ok, _ ->
+                                    if (ok) {
+                                        // reload lists then find created by name and add the product
+                                        viewModel.loadListDetailsRemote(currentUserId)
+                                        val created = viewModel.listDetails.value.firstOrNull { it.name == newListNameAuto }
+                                        if (created != null) {
+                                            viewModel.addProductToListRemote(created.id, p.id ?: -1L, qty) { ok2, _ ->
+                                                if (ok2) showAddToListDialog = false
+                                            }
+                                        } else {
+                                            // fallback: close dialog
+                                            showAddToListDialog = false
+                                        }
+                                    } else {
+                                        showAddToListDialog = false
+                                    }
+                                }
+                            }
+                        }
+                    }) { Text("OK", color = AppPrimary) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showAddToListDialog = false }) { Text("Anuluj") }
+                }
+            )
+        }
+
+        Button(
+            onClick = { showAddToListDialog = true },
+            modifier = Modifier.size(addButtonSize),
+            colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)
+        ) {
+            Text("+", style = MaterialTheme.typography.h6)
+        }
+
+        if (showDetails) {
+            AlertDialog(
+                onDismissRequest = { showDetails = false },
+                title = { Text(text = p.name ?: "<brak nazwy>") },
+                text = {
+                    Column {
+                        Text("Kod: ${p.barcode ?: "-"}")
+                        Text("Kalorie: ${p.calories ?: "-"}")
+                        Text("Białko: ${p.protein ?: "-"}")
+                        Text("Tłuszcz: ${p.fat ?: "-"}")
+                        Text("Węglowodany: ${p.carbohydrates ?: "-"}")
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showDetails = false }) { Text("Zamknij", color = AppPrimary) }
+                }
+            )
         }
     }
 }
@@ -71,10 +579,11 @@ fun ProductListScreen(viewModel: ProductViewModel, authViewModel: com.example.ap
 fun ProductRow(p: Product, onAdd: (Product) -> Unit) {
     Row(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
         Column {
-            Text(p.name, style = MaterialTheme.typography.subtitle1)
             Text("Kal: ${p.calories ?: "-"} • Kod: ${p.barcode ?: "-"}")
         }
-        Button(onClick = { onAdd(p) }) { Text("Dodaj") }
+        Button(onClick = { onAdd(p) }, colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)) {
+            Text("Dodaj")
+        }
     }
 }
 
@@ -91,11 +600,16 @@ fun AddProductForm(onSubmit: (Product) -> Unit) {
         Spacer(modifier = Modifier.height(8.dp))
         Button(onClick = {
             if (name.isNotBlank()) {
-                val product = Product(name = name, barcode = if (barcode.isBlank()) null else barcode,
-                    calories = calories.toDoubleOrNull())
+                val product = Product(
+                    name = name,
+                    barcode = if (barcode.isBlank()) null else barcode,
+                    calories = calories.toDoubleOrNull()
+                )
                 onSubmit(product)
                 name = ""; barcode = ""; calories = ""
             }
-        }) { Text("Dodaj produkt (remote)") }
+        }, colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)) {
+            Text("Dodaj produkt (remote)")
+        }
     }
 }

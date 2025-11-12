@@ -2,6 +2,8 @@ package com.example.apkazupy.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
+import com.example.apkazupy.ui.AppPrimary
+import com.example.apkazupy.ui.AppOnPrimary
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -21,8 +23,8 @@ fun AuthScreen(authViewModel: AuthViewModel, onAuthenticated: () -> Unit) {
 
         // mode buttons
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { mode = "login" }, enabled = mode != "login") { Text("Zaloguj") }
-            Button(onClick = { mode = "register" }, enabled = mode != "register") { Text("Zarejestruj") }
+            Button(onClick = { mode = "login" }, enabled = mode != "login", colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)) { Text("Zaloguj") }
+            Button(onClick = { mode = "register" }, enabled = mode != "register", colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)) { Text("Zarejestruj") }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -45,7 +47,7 @@ fun AuthScreen(authViewModel: AuthViewModel, onAuthenticated: () -> Unit) {
                     authViewModel.login(login, password) { ok, err ->
                         if (ok) onAuthenticated() else message = err ?: "Błąd"
                     }
-                }, enabled = !loading) { Text("Zaloguj") }
+                }, enabled = !loading, colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)) { Text("Zaloguj") }
             } else {
                 Button(onClick = {
                     message = null
@@ -60,7 +62,7 @@ fun AuthScreen(authViewModel: AuthViewModel, onAuthenticated: () -> Unit) {
                     authViewModel.register(login, password) { ok, err ->
                         if (ok) onAuthenticated() else message = err ?: "Błąd rejestracji"
                     }
-                }, enabled = !loading) { Text("Zarejestruj") }
+                }, enabled = !loading, colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)) { Text("Zarejestruj") }
             }
         }
 

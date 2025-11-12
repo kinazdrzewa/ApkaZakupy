@@ -1,7 +1,9 @@
+// java
 package com.example.app.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -11,13 +13,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // nowy sposób wyłączenia CSRF
+                .csrf(csrf -> csrf.disable()) // dev: wyłącz CSRF, usuwa potrzebę specjalnego matcher-a
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll() // dostęp do wszystkich endpointów
+                        .requestMatchers("/h2-console/**").permitAll()
+                        .anyRequest().permitAll() // dev: allow everything on localhost
+                )
+                .headers(headers -> headers
+                        .frameOptions(frameOptions -> frameOptions.sameOrigin())
                 );
-        http.headers(headers -> headers
-                .frameOptions(frameOptions -> frameOptions.sameOrigin()) // zezwalaj na osadzanie w iframe z tej samej domeny
-        );
 
         return http.build();
     }

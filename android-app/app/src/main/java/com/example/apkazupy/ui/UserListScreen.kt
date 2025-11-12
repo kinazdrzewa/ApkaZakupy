@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
+import com.example.apkazupy.ui.AppPrimary
+import com.example.apkazupy.ui.AppOnPrimary
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -34,8 +36,8 @@ fun UserListScreen(authViewModel: AuthViewModel, onBack: () -> Unit) {
 
     Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Użytkownicy", style = MaterialTheme.typography.h6)
-            Button(onClick = onBack) { Text("Powrót") }
+            Text("Użytkownicy", style = MaterialTheme.typography.h6, color = AppPrimary)
+            Button(onClick = onBack, colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)) { Text("Powrót") }
         }
 
         if (loading) Text("Ładowanie...")
