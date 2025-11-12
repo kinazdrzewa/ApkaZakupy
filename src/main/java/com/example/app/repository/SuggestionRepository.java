@@ -1,0 +1,9 @@
+package com.example.app.repository;
+
+import com.example.app.model.Suggestion;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
+
+public interface SuggestionRepository extends JpaRepository<Suggestion, Long> {
+    List<Suggestion> findAllByUserId(Long userId);
+}

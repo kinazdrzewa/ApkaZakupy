@@ -67,7 +67,7 @@ fun AuthScreen(authViewModel: AuthViewModel, onAuthenticated: () -> Unit) {
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-        Text("Wymagania hasła: min 8 znaków, mała + duża litera, cyfra", style = MaterialTheme.typography.caption)
+
 
         if (loading) Text("Proszę czekać...")
         message?.let { Text(it, color = MaterialTheme.colors.error) }

@@ -18,6 +18,7 @@ import com.example.apkazupy.ui.ProductViewModel
 import com.example.apkazupy.ui.AuthViewModel
 import com.example.apkazupy.ui.AuthScreen
 import com.example.apkazupy.ui.UserListScreen
+import com.example.apkazupy.ui.SuggestionsListScreen
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
@@ -46,9 +47,10 @@ class MainActivity : ComponentActivity() {
                         "auth" -> AuthScreen(authViewModel) { screen = "main" }
                         "main" -> {
                             // Usuń try/catch wokół wywołań kompozycji.
-                            ProductListScreen(viewModel, authViewModel) { screen = "users" }
+                            ProductListScreen(viewModel, authViewModel, { screen = "users" }, { screen = "suggestions" })
                         }
                         "users" -> UserListScreen(authViewModel) { screen = "main" }
+                        "suggestions" -> SuggestionsListScreen(authViewModel) { screen = "main" }
                         else -> AuthScreen(authViewModel) { screen = "main" }
                     }
                 }

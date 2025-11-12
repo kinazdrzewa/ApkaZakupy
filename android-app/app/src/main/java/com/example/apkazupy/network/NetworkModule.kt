@@ -5,6 +5,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
 
 object NetworkModule {
+
     // For Android emulator use 10.0.2.2 to reach host machine
     private const val BASE_URL = "http://127.0.0.1:8080/"
 
@@ -27,5 +28,9 @@ object NetworkModule {
 
     val apiService: ApiService by lazy {
         retrofit.create(ApiService::class.java)
+    }
+
+    val suggestionApi: SuggestionApi by lazy {
+        retrofit.create(SuggestionApi::class.java)
     }
 }
