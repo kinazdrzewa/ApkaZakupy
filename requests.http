@@ -1,0 +1,33 @@
+### pobierz uzytkownikow
+GET http://localhost:8080/api/users
+
+
+### Rejestracja nowego użytkownika
+POST http://localhost:8080/api/users/register
+Content-Type: application/json
+
+{
+  "login": "jan.nowak",
+  "password": "tajneHaslo123"
+}
+
+### Logowanie (przykład)
+POST http://localhost:8080/api/users/login
+Content-Type: application/json
+
+{
+  "login": "jan.nowak",
+  "password": "tajneHaslo123"
+}
+
+### POST
+# register a new user
+POST http://localhost:8080/api/users/register
+
+### Pobierz wszystkie produkty
+GET http://localhost:8080/api/products
+Accept: application/json
+
+### Pobierz produkt po id (przykład)
+GET http://localhost:8080/api/products/1
+Accept: application/json

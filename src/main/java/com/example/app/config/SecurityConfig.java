@@ -15,6 +15,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().permitAll() // dostęp do wszystkich endpointów
                 );
+        http.headers(headers -> headers
+                .frameOptions(frameOptions -> frameOptions.sameOrigin()) // zezwalaj na osadzanie w iframe z tej samej domeny
+        );
 
         return http.build();
     }
