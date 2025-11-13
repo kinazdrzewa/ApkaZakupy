@@ -17,6 +17,9 @@ public class Suggestion {
     private String barcode;
 
     private Double calories;
+    private Double protein;
+    private Double fat;
+    private Double carbohydrates;
 
     private String comment;
 
@@ -25,6 +28,16 @@ public class Suggestion {
     public Suggestion() {
         this.createdAt = LocalDateTime.now();
     }
+
+    // getters and setters for new nutritional fields
+    public Double getProtein() { return protein; }
+    public void setProtein(Double protein) { this.protein = protein; }
+
+    public Double getFat() { return fat; }
+    public void setFat(Double fat) { this.fat = fat; }
+
+    public Double getCarbohydrates() { return carbohydrates; }
+    public void setCarbohydrates(Double carbohydrates) { this.carbohydrates = carbohydrates; }
 
     // getters and setters
 

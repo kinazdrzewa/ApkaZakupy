@@ -18,4 +18,7 @@ interface SuggestionApi {
 
     @DELETE("api/suggestions/{id}")
     suspend fun delete(@Path("id") id: Long): Response<Void>
+
+    @POST("api/suggestions/{id}/accept")
+    suspend fun accept(@Path("id") id: Long): com.example.apkazupy.data.Product
 }

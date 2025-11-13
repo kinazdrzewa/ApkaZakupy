@@ -18,7 +18,6 @@ import com.example.apkazupy.ui.ProductViewModel
 import com.example.apkazupy.ui.AuthViewModel
 import com.example.apkazupy.ui.AuthScreen
 import com.example.apkazupy.ui.UserListScreen
-import com.example.apkazupy.ui.SuggestionsListScreen
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
@@ -26,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.unit.dp
+import com.example.apkazupy.ui.SuggestionsListScreen
 
 class MainActivity : ComponentActivity() {
     private val viewModel by lazy { ProductViewModel() }
@@ -50,7 +50,7 @@ class MainActivity : ComponentActivity() {
                             ProductListScreen(viewModel, authViewModel, { screen = "users" }, { screen = "suggestions" })
                         }
                         "users" -> UserListScreen(authViewModel) { screen = "main" }
-                        "suggestions" -> SuggestionsListScreen(authViewModel) { screen = "main" }
+                        "suggestions" -> SuggestionsListScreen(viewModel, authViewModel) { screen = "main" }
                         else -> AuthScreen(authViewModel) { screen = "main" }
                     }
                 }

@@ -53,4 +53,5 @@ interface ApiService {
 
     @DELETE("/api/lists/{id}/items/{itemId}")
     suspend fun deleteItem(@Path("id") listId: Long, @Path("itemId") itemId: Long): Response<Void>
+
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.RemoveCircle
 import androidx.compose.material.icons.filled.Delete
@@ -20,6 +21,7 @@ import androidx.compose.material.rememberScaffoldState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.filled.ExitToApp
 import com.example.apkazupy.ui.AppPrimary
 import com.example.apkazupy.ui.AppOnPrimary
 import androidx.compose.material.SliderDefaults
@@ -67,7 +69,17 @@ fun ProductListScreen(
             TopAppBar(
                 title = { Text("Apka Zakupy") },
                 backgroundColor = AppPrimary,
-                contentColor = AppOnPrimary
+                contentColor = AppOnPrimary,
+                actions = {
+                    // logout button visible when logged in
+                    if (currentUser != null) {
+                        IconButton(onClick = {
+                            authViewModel.logout()
+                        }) {
+                            Icon(imageVector = Icons.Filled.ExitToApp, contentDescription = "Wyloguj", tint = AppOnPrimary)
+                        }
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -116,6 +128,9 @@ fun ProductListScreen(
                     var sName by remember { mutableStateOf("") }
                     var sBarcode by remember { mutableStateOf("") }
                     var sCalories by remember { mutableStateOf("") }
+                    var sProtein by remember { mutableStateOf("") }
+                    var sFat by remember { mutableStateOf("") }
+                    var sCarbs by remember { mutableStateOf("") }
                     var sComment by remember { mutableStateOf("") }
                     var sending by remember { mutableStateOf(false) }
 
@@ -127,13 +142,19 @@ fun ProductListScreen(
                                 OutlinedTextField(value = sName, onValueChange = { sName = it }, label = { Text("Nazwa produktu") })
                                 OutlinedTextField(value = sBarcode, onValueChange = { sBarcode = it }, label = { Text("Kod") })
                                 OutlinedTextField(value = sCalories, onValueChange = { sCalories = it.filter { c-> c.isDigit() || c=='.' } }, label = { Text("Kalorie") })
+                                OutlinedTextField(value = sProtein, onValueChange = { sProtein = it.filter { c-> c.isDigit() || c=='.' } }, label = { Text("Białko (g)") })
+                                OutlinedTextField(value = sFat, onValueChange = { sFat = it.filter { c-> c.isDigit() || c=='.' } }, label = { Text("Tłuszcz (g)") })
+                                OutlinedTextField(value = sCarbs, onValueChange = { sCarbs = it.filter { c-> c.isDigit() || c=='.' } }, label = { Text("Węglowodany (g)") })
                                 OutlinedTextField(value = sComment, onValueChange = { sComment = it }, label = { Text("Komentarz") })
                             }
                         },
                         confirmButton = {
                             TextButton(onClick = {
                                 val cal = sCalories.toDoubleOrNull()
-                                val suggestion = Suggestion(id = null, userId = currentUserId, productName = sName, barcode = if (sBarcode.isBlank()) null else sBarcode, calories = cal, comment = if (sComment.isBlank()) null else sComment)
+                                val prot = sProtein.toDoubleOrNull()
+                                val fat = sFat.toDoubleOrNull()
+                                val carbs = sCarbs.toDoubleOrNull()
+                                val suggestion = Suggestion(id = null, userId = currentUserId, productName = sName, barcode = if (sBarcode.isBlank()) null else sBarcode, calories = cal, protein = prot, fat = fat, carbohydrates = carbs, comment = if (sComment.isBlank()) null else sComment)
                                 sending = true
                                 // wykonaj wywołanie sieciowe do backendu aby zapisać sugestię
                                 coroutineScope.launch {
@@ -157,12 +178,15 @@ fun ProductListScreen(
                     )
                 }
 
-                Button(
-                    onClick = { showSuggestDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)
-                ) {
-                    Text("Dodaj sugestię")
+                // only non-admin users can submit suggestions
+                if (currentUser?.login != "admin") {
+                    Button(
+                        onClick = { showSuggestDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)
+                    ) {
+                        Text("Dodaj sugestię")
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -286,12 +310,12 @@ fun ProductListScreen(
                             } else {
                                 LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
                                     items(filtered) { p ->
-                                        ProductItemRow(p = p, viewModel = viewModel, currentUserId = currentUserId, onAdded = {
-                                            coroutineScope.launch {
-                                                scaffoldState.snackbarHostState.showSnackbar("Dodano do listy")
+                                            ProductItemRow(p = p, viewModel = viewModel, currentUserId = currentUserId, isAdmin = (currentUser?.login == "admin")) { 
+                                                coroutineScope.launch {
+                                                    scaffoldState.snackbarHostState.showSnackbar("Dodano do listy")
+                                                }
                                             }
-                                        })
-                                    }
+                                        }
                                 }
                             }
                         }
@@ -586,7 +610,7 @@ fun ProductListScreen(
 } // koniec ProductListScreen
 
 @Composable
-private fun ProductItemRow(p: Product, viewModel: ProductViewModel, currentUserId: Long?, onAdded: () -> Unit = {}) {
+private fun ProductItemRow(p: Product, viewModel: ProductViewModel, currentUserId: Long?, isAdmin: Boolean = false, onAdded: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -599,8 +623,19 @@ private fun ProductItemRow(p: Product, viewModel: ProductViewModel, currentUserI
         }
 
         var showDetails by remember { mutableStateOf(false) }
+        var showEdit by remember { mutableStateOf(false) }
+        var showDeleteConfirm by remember { mutableStateOf(false) }
+
         IconButton(onClick = { showDetails = true }) {
             Icon(imageVector = Icons.Filled.Info, contentDescription = "Szczegóły", tint = AppPrimary)
+        }
+        if (isAdmin) {
+            IconButton(onClick = { showEdit = true }) {
+                Icon(imageVector = Icons.Filled.Edit, contentDescription = "Edytuj", tint = AppPrimary)
+            }
+            IconButton(onClick = { showDeleteConfirm = true }) {
+                Icon(imageVector = Icons.Filled.Delete, contentDescription = "Usuń produkt", tint = Color.Red)
+            }
         }
 
         val addButtonSize: Dp = 44.dp
@@ -729,12 +764,14 @@ private fun ProductItemRow(p: Product, viewModel: ProductViewModel, currentUserI
             )
         }
 
-        Button(
-            onClick = { showAddToListDialog = true },
-            modifier = Modifier.size(addButtonSize),
-            colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)
-        ) {
-            Text("+", style = MaterialTheme.typography.h6)
+        if (!isAdmin) {
+            Button(
+                onClick = { showAddToListDialog = true },
+                modifier = Modifier.size(addButtonSize),
+                colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)
+            ) {
+                Text("+", style = MaterialTheme.typography.h6)
+            }
         }
 
         if (showDetails) {
@@ -753,6 +790,67 @@ private fun ProductItemRow(p: Product, viewModel: ProductViewModel, currentUserI
                 confirmButton = {
                     TextButton(onClick = { showDetails = false }) { Text("Zamknij", color = AppPrimary) }
                 }
+            )
+        }
+
+        if (showEdit) {
+            var name by remember { mutableStateOf(p.name ?: "") }
+            var barcode by remember { mutableStateOf(p.barcode ?: "") }
+            var caloriesText by remember { mutableStateOf(p.calories?.toString() ?: "") }
+            var proteinText by remember { mutableStateOf(p.protein?.toString() ?: "") }
+            var fatText by remember { mutableStateOf(p.fat?.toString() ?: "") }
+            var carbsText by remember { mutableStateOf(p.carbohydrates?.toString() ?: "") }
+            AlertDialog(
+                onDismissRequest = { showEdit = false },
+                title = { Text("Edytuj produkt") },
+                text = {
+                    Column {
+                        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nazwa") })
+                        OutlinedTextField(value = barcode, onValueChange = { barcode = it }, label = { Text("Kod") })
+                        OutlinedTextField(value = caloriesText, onValueChange = { caloriesText = it.filter { c-> c.isDigit() || c=='.' } }, label = { Text("Kalorie") })
+                        OutlinedTextField(value = proteinText, onValueChange = { proteinText = it.filter { c-> c.isDigit() || c=='.' } }, label = { Text("Białko") })
+                        OutlinedTextField(value = fatText, onValueChange = { fatText = it.filter { c-> c.isDigit() || c=='.' } }, label = { Text("Tłuszcz") })
+                        OutlinedTextField(value = carbsText, onValueChange = { carbsText = it.filter { c-> c.isDigit() || c=='.' } }, label = { Text("Węglowodany") })
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val updated = Product(
+                            id = p.id,
+                            name = name,
+                            barcode = if (barcode.isBlank()) null else barcode,
+                            calories = caloriesText.toDoubleOrNull(),
+                            protein = proteinText.toDoubleOrNull(),
+                            fat = fatText.toDoubleOrNull(),
+                            carbohydrates = carbsText.toDoubleOrNull()
+                        )
+                        viewModel.updateProductRemote(updated) { ok, err ->
+                            if (ok) {
+                                viewModel.loadProducts()
+                            }
+                        }
+                        showEdit = false
+                    }) { Text("Zapisz", color = AppPrimary) }
+                },
+                dismissButton = { TextButton(onClick = { showEdit = false }) { Text("Anuluj") } }
+            )
+        }
+
+        if (showDeleteConfirm) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirm = false },
+                title = { Text("Usuń produkt") },
+                text = { Text("Czy na pewno chcesz usunąć produkt '${p.name}' z bazy?") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val pid = p.id ?: -1L
+                        viewModel.deleteProductRemote(pid) { ok, err ->
+                            // nothing more here; viewModel reloads products on success
+                        }
+                        showDeleteConfirm = false
+                    }) { Text("Usuń", color = Color.Red) }
+                },
+                dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Anuluj") } }
             )
         }
     }

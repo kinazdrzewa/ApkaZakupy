@@ -146,6 +146,7 @@ class ProductViewModel : ViewModel() {
         }
     }
 
+
     fun loadListItemsRemote(listId: Long) {
         viewModelScope.launch {
             try {
@@ -197,6 +198,38 @@ class ProductViewModel : ViewModel() {
                 loadProducts()
             } catch (e: Exception) {
                 onComplete(false)
+            }
+        }
+    }
+
+    fun updateProductRemote(product: Product, onComplete: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val id = product.id ?: run {
+                    onComplete(false, "Brak id produktu")
+                    return@launch
+                }
+                api.update(id, product)
+                loadProducts()
+                onComplete(true, null)
+            } catch (e: Exception) {
+                onComplete(false, e.message)
+            }
+        }
+    }
+
+    fun deleteProductRemote(productId: Long, onComplete: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val resp = NetworkModule.productApi.delete(productId)
+                if (resp.isSuccessful) {
+                    loadProducts()
+                    onComplete(true, null)
+                } else {
+                    onComplete(false, "Server: ${resp.code()} ${resp.message()}")
+                }
+            } catch (e: Exception) {
+                onComplete(false, e.message)
             }
         }
     }

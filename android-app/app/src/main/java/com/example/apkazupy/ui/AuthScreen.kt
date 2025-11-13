@@ -5,6 +5,11 @@ import androidx.compose.material.*
 import com.example.apkazupy.ui.AppPrimary
 import com.example.apkazupy.ui.AppOnPrimary
 import androidx.compose.runtime.*
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -30,7 +35,20 @@ fun AuthScreen(authViewModel: AuthViewModel, onAuthenticated: () -> Unit) {
         Spacer(modifier = Modifier.height(12.dp))
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(value = login, onValueChange = { login = it }, label = { Text("Login") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Hasło") }, modifier = Modifier.fillMaxWidth())
+        var passwordVisible by remember { mutableStateOf(false) }
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Hasło") },
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(imageVector = image, contentDescription = if (passwordVisible) "Ukryj hasło" else "Pokaż hasło")
+                }
+            }
+        )
         Spacer(modifier = Modifier.height(8.dp))
         // client-side validation for registration
         val passwordValid = remember(password) {
