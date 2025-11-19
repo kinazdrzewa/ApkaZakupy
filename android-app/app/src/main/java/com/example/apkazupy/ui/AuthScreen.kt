@@ -18,7 +18,7 @@ fun AuthScreen(authViewModel: AuthViewModel, onAuthenticated: () -> Unit) {
     var login by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var message by remember { mutableStateOf<String?>(null) }
-    var mode by remember { mutableStateOf("login") } // or "register"
+    var mode by remember { mutableStateOf("login") } 
 
     val loading by authViewModel.loading.collectAsState()
 
@@ -26,7 +26,6 @@ fun AuthScreen(authViewModel: AuthViewModel, onAuthenticated: () -> Unit) {
         Text("foodscan", style = MaterialTheme.typography.h4)
         Spacer(modifier = Modifier.height(12.dp))
 
-        // mode buttons
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = { mode = "login" }, enabled = mode != "login", colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)) { Text("Zaloguj") }
             Button(onClick = { mode = "register" }, enabled = mode != "register", colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)) { Text("Zarejestruj") }
@@ -50,7 +49,6 @@ fun AuthScreen(authViewModel: AuthViewModel, onAuthenticated: () -> Unit) {
             }
         )
         Spacer(modifier = Modifier.height(8.dp))
-        // client-side validation for registration
         val passwordValid = remember(password) {
             password.length >= 8 &&
             password.any { it.isLowerCase() } &&

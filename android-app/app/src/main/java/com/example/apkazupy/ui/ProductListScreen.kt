@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.filled.ExitToApp
+import com.example.apkazupy.network.NetworkModule
+import com.example.apkazupy.data.Product
 import com.example.apkazupy.ui.AppPrimary
 import com.example.apkazupy.ui.AppOnPrimary
 import androidx.compose.material.SliderDefaults
@@ -30,7 +32,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
-import com.example.apkazupy.data.Product
 import com.example.apkazupy.data.Suggestion
 import com.example.apkazupy.network.createSuggestion
 import androidx.compose.material.Card
@@ -113,12 +114,61 @@ fun ProductListScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                 }
 
+                var showScanDialog by remember { mutableStateOf(false) }
+                var scannedProduct by remember { mutableStateOf<Product?>(null) }
+                var scanBarcodeInput by remember { mutableStateOf("") }
+                var showScannedDetails by remember { mutableStateOf(false) }
+                var searchQuery by remember { mutableStateOf("") }
+
                 Button(
-                    onClick = { /* TODO: scan action */ },
+                    onClick = { showScanDialog = true },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(backgroundColor = AppPrimary, contentColor = AppOnPrimary)
                 ) {
                     Text("Skanuj produkt spożywczy")
+                }
+
+                if (showScanDialog) {
+                    // Request permission and show camera-based scanner dialog
+                    BarcodeScannerDialog(onDismissRequest = { showScanDialog = false }, onBarcodeScanned = { barcode ->
+                        showScanDialog = false
+                        coroutineScope.launch {
+                            try {
+                                val resp = NetworkModule.productApi.findByBarcode(barcode.trim())
+                                if (resp.isSuccessful && resp.body() != null) {
+                                    scannedProduct = resp.body()
+                                    showScannedDetails = true
+                                } else {
+                                    // not found -> pre-fill search and notify
+                                    searchQuery = barcode.trim()
+                                    scaffoldState.snackbarHostState.showSnackbar("Nie znaleziono produktu. Możesz wyszukać ręcznie.")
+                                }
+                            } catch (e: Exception) {
+                                scaffoldState.snackbarHostState.showSnackbar("Błąd sieci: ${e.message}")
+                            }
+                        }
+                    })
+                }
+
+                if (showScannedDetails && scannedProduct != null) {
+                    val p = scannedProduct!!
+                    AlertDialog(
+                        onDismissRequest = { showScannedDetails = false; scannedProduct = null },
+                        title = { Text(p.name ?: "<brak nazwy>") },
+                        text = {
+                            Column {
+                                Text("Kod: ${p.barcode ?: "-"}")
+                                Text("Kalorie: ${p.calories ?: "-"}")
+                                Text("Białko: ${p.protein ?: "-"}")
+                                Text("Tłuszcz: ${p.fat ?: "-"}")
+                                Text("Węglowodany: ${p.carbohydrates ?: "-"}")
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { showScannedDetails = false; scannedProduct = null }) { Text("OK", color = AppPrimary) }
+                        },
+                        dismissButton = {}
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -286,7 +336,6 @@ fun ProductListScreen(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        var searchQuery by remember { mutableStateOf("") }
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -302,20 +351,25 @@ fun ProductListScreen(
                         } else {
                             val filtered = products.filter { p ->
                                 val byCalories = p.calories == null || (p.calories ?: 0.0) <= maxCalories.toDouble()
-                                val byName = searchQuery.isBlank() || (p.name?.contains(searchQuery, ignoreCase = true) ?: false)
-                                byCalories && byName
+                                val q = searchQuery.trim()
+                                val bySearch = q.isBlank() || (
+                                    (p.name?.contains(q, ignoreCase = true) ?: false) ||
+                                    (p.barcode?.contains(q, ignoreCase = true) ?: false)
+                                )
+                                byCalories && bySearch
                             }
                             if (filtered.isEmpty()) {
                                 Text("Brak produktów w bazie")
                             } else {
-                                LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
-                                    items(filtered) { p ->
-                                            ProductItemRow(p = p, viewModel = viewModel, currentUserId = currentUserId, isAdmin = (currentUser?.login == "admin")) { 
-                                                coroutineScope.launch {
-                                                    scaffoldState.snackbarHostState.showSnackbar("Dodano do listy")
-                                                }
+                                val productListScroll = rememberScrollState()
+                                Column(modifier = Modifier.heightIn(max = 300.dp).verticalScroll(productListScroll)) {
+                                    filtered.forEach { p ->
+                                        ProductItemRow(p = p, viewModel = viewModel, currentUserId = currentUserId, isAdmin = (currentUser?.login == "admin")) {
+                                            coroutineScope.launch {
+                                                scaffoldState.snackbarHostState.showSnackbar("Dodano do listy")
                                             }
                                         }
+                                    }
                                 }
                             }
                         }

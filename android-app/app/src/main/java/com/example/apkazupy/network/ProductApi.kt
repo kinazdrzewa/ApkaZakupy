@@ -21,4 +21,7 @@ interface ProductApi {
 
     @DELETE("api/products/{id}")
     suspend fun delete(@Path("id") id: Long): Response<Void>
+
+    @GET("api/products/{barcode}")
+    suspend fun findByBarcode(@Path("barcode") barcode: String): Response<Product>
 }

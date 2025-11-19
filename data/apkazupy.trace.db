@@ -1,0 +1,40 @@
+2025-11-19 23:33:48.965729+01:00 jdbc[34]: exception
+org.h2.jdbc.JdbcSQLDataException: Błąd konwersji danych "'3,2' (PRODUCT: ""CARBOHYDRATES"" FLOAT(53))"
+Data conversion error converting "'3,2' (PRODUCT: ""CARBOHYDRATES"" FLOAT(53))"; SQL statement:
+INSERT INTO "PUBLIC"."PRODUCT"("ID","BARCODE","CALORIES","CARBOHYDRATES","FAT","NAME","PROTEIN")VALUES(?,?,?,?,?,?,?) [22018-232]
+2025-11-19 23:33:48.996842+01:00 jdbc[34]: exception
+org.h2.jdbc.JdbcSQLDataException: Błąd konwersji danych "'3,2' (PRODUCT: ""CARBOHYDRATES"" FLOAT(53))"
+Data conversion error converting "'3,2' (PRODUCT: ""CARBOHYDRATES"" FLOAT(53))"; SQL statement:
+INSERT INTO "PUBLIC"."PRODUCT"("ID","BARCODE","CALORIES","CARBOHYDRATES","FAT","NAME","PROTEIN")VALUES(?,?,?,?,?,?,?) [22018-232]
+2025-11-19 23:34:10.224691+01:00 jdbc[34]: exception
+org.h2.jdbc.JdbcSQLDataException: Błąd konwersji danych "'3,2' (PRODUCT: ""CARBOHYDRATES"" FLOAT(53))"
+Data conversion error converting "'3,2' (PRODUCT: ""CARBOHYDRATES"" FLOAT(53))"; SQL statement:
+INSERT INTO "PUBLIC"."PRODUCT"("ID","BARCODE","CALORIES","CARBOHYDRATES","FAT","NAME","PROTEIN")VALUES(?,?,?,?,?,?,?) [22018-232]
+2025-11-19 23:34:10.224691+01:00 jdbc[34]: exception
+org.h2.jdbc.JdbcSQLDataException: Błąd konwersji danych "'3,2' (PRODUCT: ""CARBOHYDRATES"" FLOAT(53))"
+Data conversion error converting "'3,2' (PRODUCT: ""CARBOHYDRATES"" FLOAT(53))"; SQL statement:
+INSERT INTO "PUBLIC"."PRODUCT"("ID","BARCODE","CALORIES","CARBOHYDRATES","FAT","NAME","PROTEIN")VALUES(?,?,?,?,?,?,?) [22018-232]
+2025-11-19 23:38:10.567744+01:00 jdbc[42]: null
+org.h2.message.DbException: Połączenie zostało zamknięte przez aplikacje i zostało usunięte przez kolektor nieużytków
+The connection was not closed by the application and is garbage collected [90018-232]
+	at org.h2.message.DbException.get(DbException.java:223)
+	at org.h2.message.DbException.get(DbException.java:199)
+	at org.h2.message.DbException.get(DbException.java:188)
+	at org.h2.jdbc.JdbcConnection.closeOld(JdbcConnection.java:217)
+	at org.h2.jdbc.JdbcConnection.<init>(JdbcConnection.java:134)
+	at org.h2.Driver.connect(Driver.java:59)
+	at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:144)
+	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:370)
+	at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:207)
+	at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:488)
+	at com.zaxxer.hikari.pool.HikariPool$PoolEntryCreator.call(HikariPool.java:752)
+	at com.zaxxer.hikari.pool.HikariPool$PoolEntryCreator.call(HikariPool.java:731)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1575)
+Caused by: org.h2.jdbc.JdbcSQLNonTransientConnectionException: Połączenie zostało zamknięte przez aplikacje i zostało usunięte przez kolektor nieużytków
+The connection was not closed by the application and is garbage collected [90018-232]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:690)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489)
+	... 16 more
