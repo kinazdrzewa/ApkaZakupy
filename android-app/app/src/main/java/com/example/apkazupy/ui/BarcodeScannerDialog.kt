@@ -62,7 +62,6 @@ fun BarcodeScannerDialog(
         return
     }
 
-    // Camera preview and analysis
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = { Text("Skaner kodów kreskowych") },
@@ -92,7 +91,7 @@ fun BarcodeScannerDialog(
 
                             analysis.setAnalyzer(cameraExecutor) { imageProxy: ImageProxy ->
                                 processImageProxy(scanner, imageProxy) { barcodeValue ->
-                                    // deliver result and stop camera
+
                                     try {
                                         cameraProvider.unbindAll()
                                     } catch (e: Exception) {

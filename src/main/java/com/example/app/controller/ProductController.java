@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/products")
-@CrossOrigin(origins = "*") // pozwala na połączenie z aplikacji Kotlin
+@CrossOrigin(origins = "*")
 public class ProductController {
 
     private final ProductRepository productRepo;

@@ -48,7 +48,6 @@ public class UserController {
         if (u.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        // Prevent deleting the admin account
         if ("admin".equals(u.get().getLogin())) {
             return ResponseEntity.status(403).build();
         }

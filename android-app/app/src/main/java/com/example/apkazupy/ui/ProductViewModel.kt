@@ -21,19 +21,15 @@ class ProductViewModel : ViewModel() {
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading
 
-    // local shopping list (in-memory for demo)
     private val _localList = MutableStateFlow<List<Product>>(emptyList())
     val localList: StateFlow<List<Product>> = _localList
 
-    // named shopping lists (only names are stored for now)
     private val _namedLists = MutableStateFlow<List<String>>(emptyList())
     val namedLists: StateFlow<List<String>> = _namedLists
 
-    // detailed lists (id + name) for selection when adding items
     private val _listDetails = MutableStateFlow<List<ShoppingListDto>>(emptyList())
     val listDetails: StateFlow<List<ShoppingListDto>> = _listDetails
 
-    // items for the currently opened list
     private val _listItems = MutableStateFlow<List<ListItemDto>>(emptyList())
     val listItems: StateFlow<List<ListItemDto>> = _listItems
 
@@ -47,7 +43,6 @@ class ProductViewModel : ViewModel() {
             try {
                 _products.value = api.getAll()
             } catch (e: Exception) {
-                // log or handle error in a real app
             } finally {
                 _loading.value = false
             }
@@ -72,7 +67,6 @@ class ProductViewModel : ViewModel() {
             try {
                 val resp = NetworkModule.apiService.createList(com.example.apkazupy.network.CreateListRequest(name = name.trim(), userId = userId))
                 if (resp.isSuccessful) {
-                    // reload lists from server to keep server as source of truth
                     loadNamedListsRemote(userId)
                     loadListDetailsRemote(userId)
                     onComplete(true, null)
@@ -91,7 +85,6 @@ class ProductViewModel : ViewModel() {
                 val lists = NetworkModule.apiService.getLists(userId)
                 _namedLists.value = lists
             } catch (e: Exception) {
-                // ignore or log; keep local lists as fallback
             }
         }
     }
@@ -106,7 +99,7 @@ class ProductViewModel : ViewModel() {
                 val details = NetworkModule.apiService.getListDetails(userId)
                 _listDetails.value = details
             } catch (e: Exception) {
-                // ignore or log
+
             }
         }
     }
@@ -116,7 +109,7 @@ class ProductViewModel : ViewModel() {
             try {
                 val resp = NetworkModule.apiService.addItemToList(listId, AddItemRequest(productId = productId, quantity = quantity))
                 if (resp.isSuccessful) {
-                    // reload items for that list
+
                     loadListItemsRemote(listId)
                     onComplete(true, null)
                 } else {
@@ -133,7 +126,7 @@ class ProductViewModel : ViewModel() {
             try {
                 val resp = NetworkModule.apiService.deleteList(listId)
                 if (resp.isSuccessful) {
-                    // reload lists
+
                     loadNamedListsRemote(userId)
                     loadListDetailsRemote(userId)
                     onComplete(true, null)
@@ -153,7 +146,7 @@ class ProductViewModel : ViewModel() {
                 val items = NetworkModule.apiService.getListItems(listId)
                 _listItems.value = items
             } catch (e: Exception) {
-                // ignore or log
+
             }
         }
     }

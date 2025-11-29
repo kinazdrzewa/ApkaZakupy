@@ -1,4 +1,3 @@
-// kotlin
 package com.example.apkazupy.ui
 
 import androidx.compose.foundation.layout.*
@@ -72,7 +71,6 @@ fun ProductListScreen(
                 backgroundColor = AppPrimary,
                 contentColor = AppOnPrimary,
                 actions = {
-                    // logout button visible when logged in
                     if (currentUser != null) {
                         IconButton(onClick = {
                             authViewModel.logout()
@@ -129,7 +127,6 @@ fun ProductListScreen(
                 }
 
                 if (showScanDialog) {
-                    // Request permission and show camera-based scanner dialog
                     BarcodeScannerDialog(onDismissRequest = { showScanDialog = false }, onBarcodeScanned = { barcode ->
                         showScanDialog = false
                         coroutineScope.launch {
@@ -139,7 +136,7 @@ fun ProductListScreen(
                                     scannedProduct = resp.body()
                                     showScannedDetails = true
                                 } else {
-                                    // not found -> pre-fill search and notify
+
                                     searchQuery = barcode.trim()
                                     scaffoldState.snackbarHostState.showSnackbar("Nie znaleziono produktu. Możesz wyszukać ręcznie.")
                                 }
@@ -206,7 +203,7 @@ fun ProductListScreen(
                                 val carbs = sCarbs.toDoubleOrNull()
                                 val suggestion = Suggestion(id = null, userId = currentUserId, productName = sName, barcode = if (sBarcode.isBlank()) null else sBarcode, calories = cal, protein = prot, fat = fat, carbohydrates = carbs, comment = if (sComment.isBlank()) null else sComment)
                                 sending = true
-                                // wykonaj wywołanie sieciowe do backendu aby zapisać sugestię
+
                                 coroutineScope.launch {
                                     try {
                                         val resp = createSuggestion(suggestion)
@@ -228,7 +225,6 @@ fun ProductListScreen(
                     )
                 }
 
-                // only non-admin users can submit suggestions
                 if (currentUser?.login != "admin") {
                     Button(
                         onClick = { showSuggestDialog = true },
@@ -633,7 +629,7 @@ fun ProductListScreen(
                                                 }
                                             )
                                         }
-                                    } // koniec showListDialog
+                                    }
                                     if (showDeleteConfirm) {
                                         AlertDialog(
                                             onDismissRequest = { showDeleteConfirm = false },
@@ -644,8 +640,7 @@ fun ProductListScreen(
                                                     viewModel.deleteListRemote(l.id, currentUserId) { ok, _ ->
                                                         showDeleteConfirm = false
                                                         if (ok) {
-                                                            // zamknij dialog szczegółów jeżeli otwarty
-                                                            // showListDialog = false // nie musimy modyfikować tutaj stanu zewnętrznego
+
                                                         }
                                                     }
                                                 }) { Text("Usuń", color = Color.Red) }
@@ -653,15 +648,15 @@ fun ProductListScreen(
                                             dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Anuluj") } }
                                         )
                                     }
-                                } // koniec foreach displayDetails
-                            } // koniec Column dla list
-                        } // koniec else details.isEmpty
-                    } // koniec Column w Card
-                } // koniec Card
-            } // koniec Column głównej
-        } // koniec Column root
-    } // koniec Scaffold
-} // koniec ProductListScreen
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
 private fun ProductItemRow(p: Product, viewModel: ProductViewModel, currentUserId: Long?, isAdmin: Boolean = false, onAdded: () -> Unit = {}) {
@@ -789,25 +784,8 @@ private fun ProductItemRow(p: Product, viewModel: ProductViewModel, currentUserI
                                     }
                                 }
                             } else {
-                                val newListNameAuto = p.name ?: "Lista"
-                                viewModel.addNamedListRemote(currentUserId, newListNameAuto) { ok, _ ->
-                                    if (ok) {
-                                        viewModel.loadListDetailsRemote(currentUserId)
-                                        val created = viewModel.listDetails.value.firstOrNull { it.name == newListNameAuto }
-                                        if (created != null) {
-                                            viewModel.addProductToListRemote(created.id, p.id ?: -1L, qty) { ok2, _ ->
-                                                if (ok2) {
-                                                    showAddToListDialog = false
-                                                    onAdded()
-                                                }
-                                            }
-                                        } else {
-                                            showAddToListDialog = false
-                                        }
-                                    } else {
-                                        showAddToListDialog = false
-                                    }
-                                }
+                                // No list selected: require the user to choose or create one
+                                listSelectionError = "Wybierz listę lub utwórz nową"
                             }
                         }
                     }) { Text("OK", color = AppPrimary) }
@@ -899,7 +877,7 @@ private fun ProductItemRow(p: Product, viewModel: ProductViewModel, currentUserI
                     TextButton(onClick = {
                         val pid = p.id ?: -1L
                         viewModel.deleteProductRemote(pid) { ok, err ->
-                            // nothing more here; viewModel reloads products on success
+
                         }
                         showDeleteConfirm = false
                     }) { Text("Usuń", color = Color.Red) }

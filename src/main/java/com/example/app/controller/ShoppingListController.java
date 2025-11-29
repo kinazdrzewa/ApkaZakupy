@@ -52,7 +52,6 @@ public class ShoppingListController {
         public Long userId;
     }
 
-    // DTO for returning id + name
     public static class ListDto {
         public Long id;
         public String name;
@@ -74,11 +73,11 @@ public class ShoppingListController {
         if (!repo.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
-        // delete all items belonging to this list first
+
         itemRepo.findAllByShoppingListId(id).forEach(itemRepo::delete);
         repo.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
-    // Item endpoints moved to ShoppingListItemController to avoid duplicate mappings
+
 }

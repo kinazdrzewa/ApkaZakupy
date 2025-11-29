@@ -1,4 +1,3 @@
-// java
 package com.example.app.config;
 
 import org.springframework.context.annotation.Bean;
@@ -13,10 +12,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // dev: wyłącz CSRF, usuwa potrzebę specjalnego matcher-a
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/h2-console/**").permitAll()
-                        .anyRequest().permitAll() // dev: allow everything on localhost
+                        .anyRequest().permitAll()
                 )
                 .headers(headers -> headers
                         .frameOptions(frameOptions -> frameOptions.sameOrigin())

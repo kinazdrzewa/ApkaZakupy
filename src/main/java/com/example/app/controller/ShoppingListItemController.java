@@ -1,4 +1,3 @@
-// java
 package com.example.app.controller;
 
 import com.example.app.model.Product;
@@ -31,9 +30,9 @@ public class ShoppingListItemController {
     }
 
     public static class ProductDto {
-        // product fields
+
         public Long productId;
-        public Long itemId; // <-- dodać itemId (shopping_list_item.id)
+        public Long itemId;
         public String name;
         public String barcode;
         public Double calories;
@@ -65,7 +64,7 @@ public class ShoppingListItemController {
                     Product p = item.getProduct();
                     ProductDto d = new ProductDto();
                     d.productId = p.getId();
-                    d.itemId = item.getId(); // <-- ustawiamy itemId
+                    d.itemId = item.getId();
                     d.name = p.getName();
                     d.barcode = p.getBarcode();
                     d.calories = p.getCalories();
@@ -115,7 +114,7 @@ public class ShoppingListItemController {
 
         ProductDto dto = new ProductDto();
         dto.productId = product.getId();
-        dto.itemId = item.getId(); // <-- zwracamy itemId
+        dto.itemId = item.getId();
         dto.name = product.getName();
         dto.barcode = product.getBarcode();
         dto.calories = product.getCalories();
@@ -127,7 +126,6 @@ public class ShoppingListItemController {
         return ResponseEntity.created(URI.create("/api/lists/" + listId + "/items/" + item.getId())).body(dto);
     }
 
-    // update quantity for an existing item
     public static class UpdateQuantityRequest {
         public Integer quantity;
     }
@@ -151,7 +149,7 @@ public class ShoppingListItemController {
         Product p = saved.getProduct();
         ProductDto dto = new ProductDto();
         dto.productId = p.getId();
-        dto.itemId = saved.getId(); // <-- itemId ustawiony
+        dto.itemId = saved.getId();
         dto.name = p.getName();
         dto.barcode = p.getBarcode();
         dto.calories = p.getCalories();

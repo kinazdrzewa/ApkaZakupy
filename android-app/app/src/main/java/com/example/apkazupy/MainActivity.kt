@@ -1,4 +1,3 @@
-// kotlin
 package com.example.apkazupy
 
 import android.os.Bundle
@@ -46,7 +45,6 @@ class MainActivity : ComponentActivity() {
                     when (screen) {
                         "auth" -> AuthScreen(authViewModel) { screen = "main" }
                         "main" -> {
-                            // Usuń try/catch wokół wywołań kompozycji.
                             ProductListScreen(viewModel, authViewModel, { screen = "users" }, { screen = "suggestions" })
                         }
                         "users" -> UserListScreen(authViewModel) { screen = "main" }

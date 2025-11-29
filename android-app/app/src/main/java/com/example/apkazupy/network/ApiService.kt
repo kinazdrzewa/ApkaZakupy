@@ -26,14 +26,12 @@ data class ListItemDto(
 )
 
 interface ApiService {
-    // existing simple lists API (returns names)
     @GET("/api/lists")
     suspend fun getLists(@Query("userId") userId: Long? = null): List<String>
 
     @POST("/api/lists")
     suspend fun createList(@Body req: CreateListRequest): Response<String>
 
-    // richer endpoints for client: list details and items
     @GET("/api/lists/details")
     suspend fun getListDetails(@Query("userId") userId: Long? = null): List<ShoppingListDto>
 

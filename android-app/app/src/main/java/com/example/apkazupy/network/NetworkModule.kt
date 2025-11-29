@@ -7,13 +7,11 @@ import retrofit2.converter.scalars.ScalarsConverterFactory
 
 object NetworkModule {
 
-    // For Android emulator use 10.0.2.2 to reach host machine
     private const val BASE_URL = "http://127.0.0.1:8080/"
 
     private val retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            // Scalars converter first so plain text (e.g. text/plain) responses are handled
             .addConverterFactory(ScalarsConverterFactory.create())
             .addConverterFactory(GsonConverterFactory.create())
             .build()

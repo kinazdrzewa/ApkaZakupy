@@ -1,6 +1,5 @@
 
 package com.example.apkazupy.ui
-
 import com.example.apkazupy.network.createProduct
 import com.example.apkazupy.ui.ProductViewModel
 import androidx.compose.foundation.layout.*
@@ -30,9 +29,10 @@ import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
+import java.text.ParseException
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun SuggestionsListScreen(productViewModel: ProductViewModel, authViewModel: AuthViewModel, onBack: () -> Unit) {
@@ -57,20 +57,24 @@ fun SuggestionsListScreen(productViewModel: ProductViewModel, authViewModel: Aut
         }
     }
 
-    // Helper: try to convert various possible `createdAt` representations into epoch millis
     fun parseCreatedAtToEpoch(createdAt: Any?): Long {
         if (createdAt == null) return 0L
         try {
             when (createdAt) {
                 is String -> {
-                    // try ISO_LOCAL_DATE_TIME first
-                    return try {
-                        val dt = LocalDateTime.parse(createdAt, DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-                        dt.toInstant(ZoneOffset.UTC).toEpochMilli()
-                    } catch (_: Exception) {
-                        // fallthrough to other parsing attempts
-                        0L
+                    // attempt to parse common ISO-like datetime strings without requiring java.time
+                    val patterns = listOf("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss")
+                    for (p in patterns) {
+                        try {
+                            val fmt = SimpleDateFormat(p, Locale.US)
+                            fmt.timeZone = TimeZone.getTimeZone("UTC")
+                            val d = fmt.parse(createdAt)
+                            if (d != null) return d.time
+                        } catch (e: ParseException) {
+                            // try next
+                        }
                     }
+                    return 0L
                 }
                 is Number -> {
                     val v = createdAt.toLong()
@@ -84,8 +88,11 @@ fun SuggestionsListScreen(productViewModel: ProductViewModel, authViewModel: Aut
                     val minute = (createdAt["minute"] as? Number)?.toInt() ?: 0
                     val second = (createdAt["second"] as? Number)?.toInt() ?: 0
                     if (year != null && month != null && day != null) {
-                        val dt = LocalDateTime.of(year, month, day, hour, minute, second)
-                        return dt.toInstant(ZoneOffset.UTC).toEpochMilli()
+                        val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+                        // Calendar months are 0-based
+                        cal.set(year, (month - 1).coerceAtLeast(0), day, hour, minute, second)
+                        cal.set(java.util.Calendar.MILLISECOND, 0)
+                        return cal.timeInMillis
                     }
                 }
             }
@@ -162,7 +169,6 @@ fun SuggestionsListScreen(productViewModel: ProductViewModel, authViewModel: Aut
                                         confirmButton = {
                                             Row {
                                                 TextButton(onClick = {
-                                                    // Save edited suggestion by creating a new suggestion and deleting the old one
                                                     scope.launch {
                                                         try {
                                                             val newSuggestion = Suggestion(
@@ -195,7 +201,6 @@ fun SuggestionsListScreen(productViewModel: ProductViewModel, authViewModel: Aut
                                                 }) { Text("Zapisz") }
 
                                                 TextButton(onClick = {
-                                                    // Add as product and remove suggestion
                                                     scope.launch {
                                                         try {
                                                             val prod = Product(
@@ -208,16 +213,14 @@ fun SuggestionsListScreen(productViewModel: ProductViewModel, authViewModel: Aut
                                                                 carbohydrates = carbsText.toDoubleOrNull()
                                                             )
                                                             val created = createProduct(prod)
-                                                            // best-effort: remove the suggestion after creating product
                                                             if (s.id != null) {
                                                                 try {
                                                                     deleteSuggestion(s.id)
                                                                 } catch (_: Exception) {
-                                                                    // ignore deletion failure; UI will refresh suggestions list
                                                                 }
                                                             }
                                                             scaffoldState.snackbarHostState.showSnackbar("Produkt dodany: ${created.id}")
-                                                            // refresh product list so UI shows newly added product
+
                                                             productViewModel.loadProducts()
                                                             suggestions = getSuggestions()
                                                         } catch (e: Exception) {

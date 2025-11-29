@@ -2,9 +2,11 @@
 <manifest package="com.example.apkazupy"
     xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permission to use network sockets -->
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Permission to access the camera for barcode scanning -->
     <uses-permission android:name="android.permission.CAMERA" />
 
     <application

@@ -68,7 +68,6 @@ fun UserListScreen(authViewModel: AuthViewModel, onBack: () -> Unit) {
                                     text = { Text("Czy na pewno chcesz usunąć użytkownika '${u.login}'?") },
                                     confirmButton = {
                                         TextButton(onClick = {
-                                            // perform delete
                                             scope.launch {
                                                 try {
                                                     val resp = NetworkModule.userApi.delete(u.id ?: -1L)

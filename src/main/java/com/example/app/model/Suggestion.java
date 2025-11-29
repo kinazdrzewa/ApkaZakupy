@@ -29,7 +29,6 @@ public class Suggestion {
         this.createdAt = LocalDateTime.now();
     }
 
-    // getters and setters for new nutritional fields
     public Double getProtein() { return protein; }
     public void setProtein(Double protein) { this.protein = protein; }
 
@@ -38,8 +37,6 @@ public class Suggestion {
 
     public Double getCarbohydrates() { return carbohydrates; }
     public void setCarbohydrates(Double carbohydrates) { this.carbohydrates = carbohydrates; }
-
-    // getters and setters
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
