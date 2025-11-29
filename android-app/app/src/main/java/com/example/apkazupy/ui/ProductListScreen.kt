@@ -784,7 +784,6 @@ private fun ProductItemRow(p: Product, viewModel: ProductViewModel, currentUserI
                                     }
                                 }
                             } else {
-                                // No list selected: require the user to choose or create one
                                 listSelectionError = "Wybierz listę lub utwórz nową"
                             }
                         }

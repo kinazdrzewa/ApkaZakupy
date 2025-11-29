@@ -62,7 +62,7 @@ fun SuggestionsListScreen(productViewModel: ProductViewModel, authViewModel: Aut
         try {
             when (createdAt) {
                 is String -> {
-                    // attempt to parse common ISO-like datetime strings without requiring java.time
+
                     val patterns = listOf("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss")
                     for (p in patterns) {
                         try {
@@ -71,7 +71,7 @@ fun SuggestionsListScreen(productViewModel: ProductViewModel, authViewModel: Aut
                             val d = fmt.parse(createdAt)
                             if (d != null) return d.time
                         } catch (e: ParseException) {
-                            // try next
+
                         }
                     }
                     return 0L
@@ -89,7 +89,7 @@ fun SuggestionsListScreen(productViewModel: ProductViewModel, authViewModel: Aut
                     val second = (createdAt["second"] as? Number)?.toInt() ?: 0
                     if (year != null && month != null && day != null) {
                         val cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
-                        // Calendar months are 0-based
+
                         cal.set(year, (month - 1).coerceAtLeast(0), day, hour, minute, second)
                         cal.set(java.util.Calendar.MILLISECOND, 0)
                         return cal.timeInMillis
